@@ -10,9 +10,10 @@ import { CommentsModule } from './comments/comments.module';
 import { LabelsModule } from './labels/labels.module';
 import { ActivityModule } from './activity/activity.module';
 import { PreferencesModule } from './preferences/preferences.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [AuthModule, UsersModule, ProjectsModule, TasksModule, SubtasksModule, CommentsModule, LabelsModule, ActivityModule, PreferencesModule],
+  imports: [PrismaModule, AuthModule, UsersModule, ProjectsModule, TasksModule, SubtasksModule, CommentsModule, LabelsModule, ActivityModule, PreferencesModule],
   controllers: [AppController],
   providers: [AppService],
 })
