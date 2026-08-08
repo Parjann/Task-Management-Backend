@@ -11,10 +11,35 @@ import { LabelsModule } from './labels/labels.module';
 import { ActivityModule } from './activity/activity.module';
 import { PreferencesModule } from './preferences/preferences.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, ProjectsModule, TasksModule, SubtasksModule, CommentsModule, LabelsModule, ActivityModule, PreferencesModule],
+  imports: [
+  ConfigModule.forRoot({
+    isGlobal: true,
+  }),
+
+  PrismaModule,
+  AuthModule,
+  UsersModule,
+  ProjectsModule,
+  TasksModule,
+  SubtasksModule,
+  CommentsModule,
+  LabelsModule,
+  ActivityModule,
+  PreferencesModule,
+],
+
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}
