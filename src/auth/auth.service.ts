@@ -3,12 +3,15 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
+import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+
+// Change this import if your Prisma client is generated elsewhere
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +19,23 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
+
+  /**
+   * Remove sensitive fields before sending user to client
+   */
+  private sanitizeUser(user: User) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+      isGuest: user.isGuest,
+      theme: user.theme,
+      accentColor: user.accentColor,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
 
   async register(dto: RegisterDto) {
     const existingUser = await this.prisma.user.findUnique({
@@ -42,7 +62,7 @@ export class AuthService {
 
     return {
       message: 'User registered successfully',
-      user,
+      user: this.sanitizeUser(user),
       accessToken: token,
     };
   }
@@ -75,16 +95,18 @@ export class AuthService {
 
     return {
       message: 'Login successful',
-      user,
+      user: this.sanitizeUser(user),
       accessToken: token,
     };
   }
 
   async guestLogin() {
+    const timestamp = Date.now();
+
     const guest = await this.prisma.user.create({
       data: {
-        name: `Guest-${Date.now()}`,
-        email: `guest-${Date.now()}@guest.local`,
+        name: `Guest-${timestamp}`,
+        email: `guest-${timestamp}@guest.local`,
         isGuest: true,
       },
     });
@@ -93,12 +115,12 @@ export class AuthService {
 
     return {
       message: 'Guest login successful',
-      user: guest,
+      user: this.sanitizeUser(guest),
       accessToken: token,
     };
   }
 
-  async generateToken(user: any) {
+  async generateToken(user: User) {
     return this.jwtService.sign({
       sub: user.id,
       email: user.email,
