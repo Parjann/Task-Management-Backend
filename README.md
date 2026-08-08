@@ -269,8 +269,8 @@ The application supports:
 - [x] Prisma Configuration
 - [x] Database Schema Design
 - [x] Initial Migration
-- [ ] Authentication Module
-- [ ] User Module
+- [x] Authentication Module
+- [x] User Module
 - [ ] Project Module
 - [ ] Task Module
 - [ ] Subtask Module
