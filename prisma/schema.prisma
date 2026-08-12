@@ -48,6 +48,7 @@ enum ProjectRole {
 enum ActivityAction {
   TASK_CREATED
   TASK_UPDATED
+  TASK_DELETED
   STATUS_CHANGED
   PRIORITY_CHANGED
   ASSIGNED
