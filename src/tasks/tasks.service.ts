@@ -1,12 +1,16 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { ActivityAction } from '@prisma/client';
+import { getProjectMember } from '../common/utils/get-project-member';
+import { checkProjectPermission } from '../common/utils/project-permission';
+import { ProjectRole } from '@prisma/client';
+
 
 @Injectable()
 export class TasksService {
@@ -24,37 +28,42 @@ export class TasksService {
       throw new NotFoundException('Project not found');
     }
 
-    // Only project owner can create tasks (we'll improve this later)
-    if (project.ownerId !== userId) {
-      throw new BadRequestException(
-        'You are not allowed to create tasks in this project',
-      );
+    const member = await getProjectMember(
+        this.prisma,
+        dto.projectId,
+        userId,
+    );
+
+    checkProjectPermission(member.role, [
+        ProjectRole.OWNER,
+        ProjectRole.ADMIN,
+        ProjectRole.MEMBER,
+    ]);
+
+    const assigneeMember = await this.prisma.projectMember.findFirst({
+        where: {
+            projectId: dto.projectId,
+            userId: dto.assigneeId,
+        },
+    });
+
+    if (!assigneeMember) {
+        throw new BadRequestException(
+            'Assignee is not a member of this project',
+        );
     }
 
-    // Validate assignee
-    if (dto.assigneeId) {
-      const assignee = await this.prisma.user.findUnique({
-        where: {
-          id: dto.assigneeId,
+    const reporterMember = await this.prisma.projectMember.findFirst({
+       where: {
+           projectId: dto.projectId,
+           userId: dto.reporterId,
         },
-      });
+    });
 
-      if (!assignee) {
-        throw new NotFoundException('Assignee not found');
-      }
-    }
-
-    // Validate reporter
-    if (dto.reporterId) {
-      const reporter = await this.prisma.user.findUnique({
-        where: {
-          id: dto.reporterId,
-        },
-      });
-
-      if (!reporter) {
-        throw new NotFoundException('Reporter not found');
-      }
+    if (!reporterMember) {
+        throw new BadRequestException(
+            'Reporter is not a member of this project',
+        );
     }
 
     return this.prisma.$transaction(async (tx) => {
