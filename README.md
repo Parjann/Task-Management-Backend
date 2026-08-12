@@ -271,11 +271,11 @@ The application supports:
 - [x] Initial Migration
 - [x] Authentication Module
 - [x] User Module
-- [ ] Project Module
-- [ ] Task Module
-- [ ] Subtask Module
-- [ ] Label Module
-- [ ] Comment Module
+- [x] Project Module
+- [x] Task Module
+- [x] Subtask Module
+- [x] Label Module
+- [x] Comment Module
 - [ ] Activity Module
 - [ ] Swagger Documentation
 - [ ] Database Seeder
