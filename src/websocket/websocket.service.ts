@@ -13,7 +13,10 @@ export class WebsocketService {
 
   emitToProject(projectId: string, event: string, payload: unknown) {
     if (this.gateway.server) {
-      this.gateway.server.to(`project:${projectId}`).emit(event, payload);
+      this.gateway.server
+        .to(`project:${projectId}`)
+        .to(projectId)
+        .emit(event, payload);
     }
   }
 

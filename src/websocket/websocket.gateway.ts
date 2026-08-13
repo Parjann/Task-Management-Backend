@@ -105,23 +105,25 @@ export class WebsocketGateway
     });
   }
 
+  @SubscribeMessage('join-project')
   @SubscribeMessage('project.join')
   async handleJoinProject(
     @ConnectedSocket() client: AppSocket,
-    @MessageBody() data: { projectId: string },
+    @MessageBody() data: string | { projectId: string },
   ) {
     const userId = client.data?.userId;
+    const projectId = typeof data === 'string' ? data : data?.projectId;
 
-    if (!userId || !data?.projectId) {
+    if (!userId || !projectId) {
       return {
         success: false,
-        message: 'Invalid data',
+        message: 'Invalid project ID',
       };
     }
 
     const member = await this.prisma.projectMember.findFirst({
       where: {
-        projectId: data.projectId,
+        projectId,
         userId,
       },
     });
@@ -133,28 +135,36 @@ export class WebsocketGateway
       };
     }
 
-    await client.join(`project:${data.projectId}`);
+    await client.join(`project:${projectId}`);
+    await client.join(projectId);
+
+    this.logger.log(`👥 User ${userId} joined project room: ${projectId}`);
 
     return {
       success: true,
-      projectId: data.projectId,
-      message: `Joined project room ${data.projectId}`,
+      projectId,
+      message: `Joined project room ${projectId}`,
     };
   }
 
+  @SubscribeMessage('leave-project')
   @SubscribeMessage('project.leave')
   async handleLeaveProject(
     @ConnectedSocket() client: AppSocket,
-    @MessageBody() data: { projectId: string },
+    @MessageBody() data: string | { projectId: string },
   ) {
-    if (data?.projectId) {
-      await client.leave(`project:${data.projectId}`);
+    const projectId = typeof data === 'string' ? data : data?.projectId;
+
+    if (projectId) {
+      await client.leave(`project:${projectId}`);
+      await client.leave(projectId);
       return {
         success: true,
-        projectId: data.projectId,
-        message: `Left project room ${data.projectId}`,
+        projectId,
+        message: `Left project room ${projectId}`,
       };
     }
+
     return {
       success: false,
     };

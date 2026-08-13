@@ -5,12 +5,16 @@ import { ActivityAction, ProjectRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { getProjectMember } from '../common/utils/get-project-member';
 import { checkProjectPermission } from '../common/utils/project-permission';
+import { WebsocketService } from '../websocket/websocket.service';
 import { CreateSubtaskDto } from './dto/create-subtask.dto';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 
 @Injectable()
 export class SubtasksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketService: WebsocketService,
+  ) {}
 
   async create(userId: string, taskId: string, dto: CreateSubtaskDto) {
     const task = await this.prisma.task.findUnique({
@@ -37,8 +41,8 @@ export class SubtasksService {
       },
     });
 
-    return this.prisma.$transaction(async (tx) => {
-      const subtask = await tx.subtask.create({
+    const subtask = await this.prisma.$transaction(async (tx) => {
+      const createdSubtask = await tx.subtask.create({
         data: {
           title: dto.title,
           taskId,
@@ -51,12 +55,20 @@ export class SubtasksService {
           taskId,
           userId,
           action: ActivityAction.SUBTASK_CREATED,
-          message: `Subtask "${subtask.title}" created`,
+          message: `Subtask "${createdSubtask.title}" created`,
         },
       });
 
-      return subtask;
+      return createdSubtask;
     });
+
+    this.websocketService.emitToProject(
+      task.projectId,
+      'subtask.created',
+      subtask,
+    );
+
+    return subtask;
   }
 
   async findAll(userId: string, taskId: string) {
@@ -115,12 +127,20 @@ export class SubtasksService {
       ProjectRole.MEMBER,
     ]);
 
-    return this.prisma.subtask.update({
+    const updatedSubtask = await this.prisma.subtask.update({
       where: {
         id,
       },
       data: dto,
     });
+
+    this.websocketService.emitToProject(
+      subtask.task.projectId,
+      'subtask.updated',
+      updatedSubtask,
+    );
+
+    return updatedSubtask;
   }
 
   async remove(userId: string, id: string) {
@@ -154,6 +174,15 @@ export class SubtasksService {
         id,
       },
     });
+
+    this.websocketService.emitToProject(
+      subtask.task.projectId,
+      'subtask.deleted',
+      {
+        id,
+        taskId: subtask.taskId,
+      },
+    );
 
     return {
       message: 'Subtask deleted successfully',

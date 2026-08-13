@@ -15,10 +15,14 @@ import { ActivityAction, Prisma, ProjectRole } from '@prisma/client';
 
 import { getProjectMember } from '../common/utils/get-project-member';
 import { checkProjectPermission } from '../common/utils/project-permission';
+import { WebsocketService } from '../websocket/websocket.service';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketService: WebsocketService,
+  ) {}
 
   async create(userId: string, dto: CreateTaskDto) {
     // Check project exists
@@ -73,7 +77,7 @@ export class TasksService {
       }
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const createdTask = await this.prisma.$transaction(async (tx) => {
       const task = await tx.task.create({
         data: {
           title: dto.title,
@@ -118,6 +122,14 @@ export class TasksService {
 
       return task;
     });
+
+    this.websocketService.emitToProject(
+      createdTask.projectId,
+      'task.created',
+      createdTask,
+    );
+
+    return createdTask;
   }
 
   async findAll(userId: string, query: GetTasksDto) {
@@ -365,8 +377,8 @@ export class TasksService {
       }
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      const updatedTask = await tx.task.update({
+    const updatedTask = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.task.update({
         where: {
           id: taskId,
         },
@@ -397,12 +409,20 @@ export class TasksService {
 
           action: ActivityAction.TASK_UPDATED,
 
-          message: `Task "${updatedTask.title}" updated`,
+          message: `Task "${updated.title}" updated`,
         },
       });
 
-      return updatedTask;
+      return updated;
     });
+
+    this.websocketService.emitToProject(
+      task.projectId,
+      'task.updated',
+      updatedTask,
+    );
+
+    return updatedTask;
   }
 
   async remove(userId: string, taskId: string) {
@@ -420,7 +440,7 @@ export class TasksService {
 
     checkProjectPermission(member.role, [ProjectRole.OWNER, ProjectRole.ADMIN]);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       await tx.activity.create({
         data: {
           taskId: task.id,
@@ -440,6 +460,13 @@ export class TasksService {
         message: 'Task deleted successfully',
       };
     });
+
+    this.websocketService.emitToProject(task.projectId, 'task.deleted', {
+      id: taskId,
+      projectId: task.projectId,
+    });
+
+    return result;
   }
 
   async move(userId: string, taskId: string, dto: MoveTaskDto) {
@@ -483,6 +510,12 @@ export class TasksService {
         },
       });
     }
+
+    this.websocketService.emitToProject(
+      task.projectId,
+      'task.moved',
+      updatedTask,
+    );
 
     return updatedTask;
   }

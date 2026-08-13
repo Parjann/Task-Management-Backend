@@ -6,10 +6,14 @@ import {
 import { NotificationType } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { WebsocketService } from '../websocket/websocket.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketService: WebsocketService,
+  ) {}
 
   async findAll(userId: string) {
     return this.prisma.notification.findMany({
@@ -127,7 +131,7 @@ export class NotificationsService {
     taskId?: string;
     projectId?: string;
   }) {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         userId: data.userId,
         title: data.title,
@@ -137,5 +141,13 @@ export class NotificationsService {
         projectId: data.projectId,
       },
     });
+
+    this.websocketService.emitToUser(
+      data.userId,
+      'notification.created',
+      notification,
+    );
+
+    return notification;
   }
 }
