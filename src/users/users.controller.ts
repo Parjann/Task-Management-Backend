@@ -1,32 +1,72 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Patch,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { memoryStorage } from 'multer';
 
-import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from './users.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+
+const multerMemoryOptions = {
+  storage: memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB max avatar size
+  },
+};
 
 @ApiTags('Users')
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
-  async getProfile(@CurrentUser() user: any) {
-    return this.prisma.user.findUnique({
-      where: {
-        id: user.id,
-      },
+  @ApiOperation({
+    summary: 'Get current logged-in user profile',
+  })
+  async getProfile(@CurrentUser() user: { id: string }) {
+    return this.usersService.getProfile(user.id);
+  }
 
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatarUrl: true,
-        isGuest: true,
-        theme: true,
-        accentColor: true,
-        createdAt: true,
+  @Throttle({
+    default: {
+      limit: 10,
+      ttl: 60000,
+    },
+  })
+  @Patch('avatar')
+  @ApiOperation({
+    summary: 'Upload user profile avatar',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
       },
-    });
+    },
+  })
+  @UseInterceptors(FileInterceptor('file', multerMemoryOptions))
+  async uploadAvatar(
+    @CurrentUser() user: { id: string },
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.usersService.uploadAvatar(user.id, file);
   }
 }

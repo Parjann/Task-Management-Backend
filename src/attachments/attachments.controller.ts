@@ -17,28 +17,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
-import { randomUUID } from 'crypto';
+import { memoryStorage } from 'multer';
 
 import { AttachmentsService } from './attachments.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
-const uploadDirectory = join(process.cwd(), 'uploads');
-if (!existsSync(uploadDirectory)) {
-  mkdirSync(uploadDirectory, { recursive: true });
-}
-
-const multerOptions = {
-  storage: diskStorage({
-    destination: uploadDirectory,
-    filename: (req, file, callback) => {
-      const uniqueSuffix = `${Date.now()}-${randomUUID()}`;
-      const ext = extname(file.originalname);
-      callback(null, `${uniqueSuffix}${ext}`);
-    },
-  }),
+const multerMemoryOptions = {
+  storage: memoryStorage(),
   limits: {
     fileSize: 25 * 1024 * 1024, // 25 MB max file size
   },
@@ -72,7 +57,7 @@ export class AttachmentsController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file', multerOptions))
+  @UseInterceptors(FileInterceptor('file', multerMemoryOptions))
   upload(
     @CurrentUser() user: { id: string },
     @Param('taskId', ParseUUIDPipe) taskId: string,

@@ -294,6 +294,7 @@ model Attachment {
 
   fileName    String
   fileUrl     String
+  publicId    String?
   mimeType    String
   fileSize    Int
 

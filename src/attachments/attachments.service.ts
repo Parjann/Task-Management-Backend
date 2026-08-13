@@ -4,19 +4,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ActivityAction, ProjectRole } from '@prisma/client';
-import { existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { getProjectMember } from '../common/utils/get-project-member';
 import { checkProjectPermission } from '../common/utils/project-permission';
 import { ActivityQueueService } from '../infrastructure/queues/activity/activity.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class AttachmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly activityQueueService: ActivityQueueService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async upload(userId: string, taskId: string, file: Express.Multer.File) {
@@ -31,13 +31,6 @@ export class AttachmentsService {
     });
 
     if (!task) {
-      if (file.path && existsSync(file.path)) {
-        try {
-          unlinkSync(file.path);
-        } catch {
-          // File may already be unlinked
-        }
-      }
       throw new NotFoundException('Task not found');
     }
 
@@ -49,14 +42,19 @@ export class AttachmentsService {
       ProjectRole.MEMBER,
     ]);
 
-    const fileUrl = `/uploads/${file.filename}`;
+    // Stream upload directly to Cloudinary
+    const cloudinaryResponse = await this.cloudinaryService.uploadFile(
+      file,
+      `task-management/projects/${task.projectId}/tasks/${taskId}`,
+    );
 
     const attachment = await this.prisma.attachment.create({
       data: {
         fileName: file.originalname,
-        fileUrl,
+        fileUrl: cloudinaryResponse.secureUrl,
+        publicId: cloudinaryResponse.publicId,
         mimeType: file.mimetype,
-        fileSize: file.size,
+        fileSize: cloudinaryResponse.bytes,
         taskId,
         uploadedBy: userId,
       },
@@ -149,15 +147,12 @@ export class AttachmentsService {
       ]);
     }
 
-    // Delete file from disk
-    const filename = attachment.fileUrl.replace(/^\/uploads\//, '');
-    const diskPath = join(process.cwd(), 'uploads', filename);
-    if (existsSync(diskPath)) {
-      try {
-        unlinkSync(diskPath);
-      } catch {
-        // File may already be unlinked
-      }
+    // Delete from Cloudinary if publicId exists
+    if (attachment.publicId) {
+      await this.cloudinaryService.deleteFile(
+        attachment.publicId,
+        attachment.mimeType.startsWith('image/') ? 'image' : 'raw',
+      );
     }
 
     await this.prisma.attachment.delete({
