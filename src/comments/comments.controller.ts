@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 import { CommentsService } from './comments.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -21,12 +22,18 @@ import { UpdateCommentDto } from './dto/update-comment.dto';
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
+  @Throttle({
+    default: {
+      limit: 60,
+      ttl: 60000,
+    },
+  })
   @Post('tasks/:taskId/comments')
   @ApiOperation({
     summary: 'Create Comment',
   })
   create(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string },
     @Param('taskId') taskId: string,
     @Body() dto: CreateCommentDto,
   ) {
@@ -37,7 +44,10 @@ export class CommentsController {
   @ApiOperation({
     summary: 'Get Task Comments',
   })
-  findAll(@CurrentUser() user: any, @Param('taskId') taskId: string) {
+  findAll(
+    @CurrentUser() user: { id: string },
+    @Param('taskId') taskId: string,
+  ) {
     return this.commentsService.findAll(user.id, taskId);
   }
 
@@ -46,7 +56,7 @@ export class CommentsController {
     summary: 'Update Comment',
   })
   update(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string },
     @Param('id') id: string,
     @Body() dto: UpdateCommentDto,
   ) {
@@ -57,7 +67,7 @@ export class CommentsController {
   @ApiOperation({
     summary: 'Delete Comment',
   })
-  remove(@CurrentUser() user: any, @Param('id') id: string) {
+  remove(@CurrentUser() user: { id: string }, @Param('id') id: string) {
     return this.commentsService.remove(user.id, id);
   }
 }

@@ -16,6 +16,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
@@ -49,6 +50,12 @@ const multerOptions = {
 export class AttachmentsController {
   constructor(private readonly attachmentsService: AttachmentsService) {}
 
+  @Throttle({
+    default: {
+      limit: 20,
+      ttl: 60000,
+    },
+  })
   @Post('tasks/:taskId/attachments')
   @ApiOperation({
     summary: 'Upload Attachment',
@@ -67,7 +74,7 @@ export class AttachmentsController {
   })
   @UseInterceptors(FileInterceptor('file', multerOptions))
   upload(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string },
     @Param('taskId', ParseUUIDPipe) taskId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
@@ -79,7 +86,7 @@ export class AttachmentsController {
     summary: 'Get Task Attachments',
   })
   findAll(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string },
     @Param('taskId', ParseUUIDPipe) taskId: string,
   ) {
     return this.attachmentsService.findAll(user.id, taskId);
@@ -89,7 +96,10 @@ export class AttachmentsController {
   @ApiOperation({
     summary: 'Delete Attachment',
   })
-  remove(@CurrentUser() user: any, @Param('id', ParseUUIDPipe) id: string) {
+  remove(
+    @CurrentUser() user: { id: string },
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.attachmentsService.remove(user.id, id);
   }
 }

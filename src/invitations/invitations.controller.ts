@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { InvitationsService } from './invitations.service';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
@@ -11,6 +12,12 @@ import { CreateInvitationDto } from './dto/create-invitation.dto';
 export class InvitationsController {
   constructor(private readonly invitationsService: InvitationsService) {}
 
+  @Throttle({
+    default: {
+      limit: 20,
+      ttl: 60000,
+    },
+  })
   @Post('projects/:projectId/invitations')
   @ApiOperation({
     summary: 'Invite member to project by email',

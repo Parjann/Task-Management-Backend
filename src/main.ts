@@ -7,6 +7,7 @@ import { join } from 'path';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
+import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -30,7 +31,11 @@ async function bootstrap() {
     }),
   );
 
-  app.setGlobalPrefix('api');
+  app.useGlobalFilters(new ThrottlerExceptionFilter());
+
+  app.setGlobalPrefix('api', {
+    exclude: ['admin/queues', 'admin/queues/(.*)'],
+  });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Task Management API')
@@ -51,4 +56,4 @@ async function bootstrap() {
   console.log(`📚 Swagger Docs: http://localhost:${port}/api/docs`);
 }
 
-bootstrap();
+void bootstrap();

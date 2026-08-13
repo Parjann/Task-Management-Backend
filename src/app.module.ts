@@ -19,6 +19,7 @@ import { CalendarModule } from './calendar/calendar.module';
 import { MailModule } from './mail/mail.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { AppBullBoardModule } from './bull-board/bull-board.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { FcmModule } from './fcm/fcm.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
@@ -26,6 +27,7 @@ import { QueuesModule } from './infrastructure/queues/queues.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -34,8 +36,16 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
     }),
 
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
+
     RedisModule,
     QueuesModule,
+    AppBullBoardModule,
 
     FirebaseModule,
     FcmModule,
@@ -64,6 +74,10 @@ import { ConfigModule } from '@nestjs/config';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
