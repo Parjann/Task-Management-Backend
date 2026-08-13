@@ -7,12 +7,14 @@ import { NotificationType } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { WebsocketService } from '../websocket/websocket.service';
+import { FcmService } from '../fcm/fcm.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly websocketService: WebsocketService,
+    private readonly fcmService: FcmService,
   ) {}
 
   async findAll(userId: string) {
@@ -142,11 +144,20 @@ export class NotificationsService {
       },
     });
 
+    // Real-time WebSocket emission to online user
     this.websocketService.emitToUser(
       data.userId,
       'notification.created',
       notification,
     );
+
+    // Push notification to registered device tokens
+    await this.fcmService.sendToUser(data.userId, data.title, data.message, {
+      notificationId: notification.id,
+      type: data.type,
+      taskId: data.taskId || '',
+      projectId: data.projectId || '',
+    });
 
     return notification;
   }

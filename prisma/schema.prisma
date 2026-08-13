@@ -108,6 +108,7 @@ model User {
   attachments     Attachment[]
   notifications   Notification[]
   sentInvitations Invitation[]
+  fcmTokens       FcmToken[]
 
   @@index([email])
 }
@@ -350,4 +351,15 @@ model Invitation {
   @@index([projectId])
   @@index([email])
   @@index([token])
+}
+
+model FcmToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

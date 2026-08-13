@@ -18,6 +18,8 @@ import { WebsocketModule } from './websocket/websocket.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { MailModule } from './mail/mail.module';
 import { InvitationsModule } from './invitations/invitations.module';
+import { FirebaseModule } from './firebase/firebase.module';
+import { FcmModule } from './fcm/fcm.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -28,6 +30,9 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    FirebaseModule,
+    FcmModule,
 
     PrismaModule,
     AuthModule,
