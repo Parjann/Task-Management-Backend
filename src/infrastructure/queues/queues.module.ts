@@ -1,6 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { EmailQueueModule } from './email/email.module';
+import { PushQueueModule } from './push/push.module';
+import { NotificationQueueModule } from './notification/notification.module';
 
 @Global()
 @Module({
@@ -11,7 +13,14 @@ import { EmailQueueModule } from './email/email.module';
       },
     }),
     EmailQueueModule,
+    PushQueueModule,
+    NotificationQueueModule,
   ],
-  exports: [BullModule, EmailQueueModule],
+  exports: [
+    BullModule,
+    EmailQueueModule,
+    PushQueueModule,
+    NotificationQueueModule,
+  ],
 })
 export class QueuesModule {}

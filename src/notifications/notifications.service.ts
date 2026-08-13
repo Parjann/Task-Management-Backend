@@ -6,15 +6,13 @@ import {
 import { NotificationType } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { WebsocketService } from '../websocket/websocket.service';
-import { FcmService } from '../fcm/fcm.service';
+import { NotificationQueueService } from '../infrastructure/queues/notification/notification.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly websocketService: WebsocketService,
-    private readonly fcmService: FcmService,
+    private readonly notificationQueueService: NotificationQueueService,
   ) {}
 
   async findAll(userId: string) {
@@ -133,32 +131,12 @@ export class NotificationsService {
     taskId?: string;
     projectId?: string;
   }) {
-    const notification = await this.prisma.notification.create({
-      data: {
-        userId: data.userId,
-        title: data.title,
-        message: data.message,
-        type: data.type,
-        taskId: data.taskId,
-        projectId: data.projectId,
-      },
-    });
+    // Queue asynchronous database notification creation, WebSocket emission, and FCM push delivery
+    await this.notificationQueueService.createNotification(data);
 
-    // Real-time WebSocket emission to online user
-    this.websocketService.emitToUser(
-      data.userId,
-      'notification.created',
-      notification,
-    );
-
-    // Push notification to registered device tokens
-    await this.fcmService.sendToUser(data.userId, data.title, data.message, {
-      notificationId: notification.id,
-      type: data.type,
-      taskId: data.taskId || '',
-      projectId: data.projectId || '',
-    });
-
-    return notification;
+    return {
+      success: true,
+      message: 'Notification queued successfully',
+    };
   }
 }
