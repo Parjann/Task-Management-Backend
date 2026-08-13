@@ -4,10 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import {
-  ActivityAction,
-  ProjectRole,
-} from '@prisma/client';
+import { ActivityAction, ProjectRole } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { getProjectMember } from '../common/utils/get-project-member';
@@ -19,11 +16,7 @@ import { UpdateCommentDto } from './dto/update-comment.dto';
 export class CommentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    userId: string,
-    taskId: string,
-    dto: CreateCommentDto,
-  ) {
+  async create(userId: string, taskId: string, dto: CreateCommentDto) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -34,11 +27,7 @@ export class CommentsService {
       throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -71,10 +60,7 @@ export class CommentsService {
     });
   }
 
-  async findAll(
-    userId: string,
-    taskId: string,
-  ) {
+  async findAll(userId: string, taskId: string) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -85,11 +71,7 @@ export class CommentsService {
       throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -111,11 +93,7 @@ export class CommentsService {
     });
   }
 
-  async update(
-    userId: string,
-    commentId: string,
-    dto: UpdateCommentDto,
-  ) {
+  async update(userId: string, commentId: string, dto: UpdateCommentDto) {
     const comment = await this.prisma.comment.findUnique({
       where: {
         id: commentId,
@@ -130,9 +108,7 @@ export class CommentsService {
     }
 
     if (comment.userId !== userId) {
-      throw new ForbiddenException(
-        'You can only edit your own comments.',
-      );
+      throw new ForbiddenException('You can only edit your own comments.');
     }
 
     return this.prisma.comment.update({
@@ -146,10 +122,7 @@ export class CommentsService {
     });
   }
 
-  async remove(
-    userId: string,
-    commentId: string,
-  ) {
+  async remove(userId: string, commentId: string) {
     const comment = await this.prisma.comment.findUnique({
       where: {
         id: commentId,

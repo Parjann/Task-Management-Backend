@@ -9,11 +9,7 @@ import {
   Post,
 } from '@nestjs/common';
 
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { LabelsService } from './labels.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -25,9 +21,7 @@ import { AssignLabelDto } from './dto/assign-label.dto';
 @ApiBearerAuth()
 @Controller()
 export class LabelsController {
-  constructor(
-    private readonly labelsService: LabelsService,
-  ) {}
+  constructor(private readonly labelsService: LabelsService) {}
 
   // ===============================
   // Project Labels
@@ -44,11 +38,7 @@ export class LabelsController {
     @Body()
     dto: CreateLabelDto,
   ) {
-    return this.labelsService.create(
-      user.id,
-      projectId,
-      dto,
-    );
+    return this.labelsService.create(user.id, projectId, dto);
   }
 
   @Get('projects/:projectId/labels')
@@ -60,10 +50,7 @@ export class LabelsController {
     @Param('projectId', ParseUUIDPipe)
     projectId: string,
   ) {
-    return this.labelsService.findAll(
-      user.id,
-      projectId,
-    );
+    return this.labelsService.findAll(user.id, projectId);
   }
 
   @Patch('labels/:id')
@@ -77,11 +64,7 @@ export class LabelsController {
     @Body()
     dto: UpdateLabelDto,
   ) {
-    return this.labelsService.update(
-      user.id,
-      labelId,
-      dto,
-    );
+    return this.labelsService.update(user.id, labelId, dto);
   }
 
   @Delete('labels/:id')
@@ -93,10 +76,7 @@ export class LabelsController {
     @Param('id', ParseUUIDPipe)
     labelId: string,
   ) {
-    return this.labelsService.remove(
-      user.id,
-      labelId,
-    );
+    return this.labelsService.remove(user.id, labelId);
   }
 
   // ===============================
@@ -114,11 +94,7 @@ export class LabelsController {
     @Body()
     dto: AssignLabelDto,
   ) {
-    return this.labelsService.assign(
-      user.id,
-      taskId,
-      dto,
-    );
+    return this.labelsService.assign(user.id, taskId, dto);
   }
 
   @Delete('tasks/:taskId/labels/:labelId')
@@ -132,10 +108,6 @@ export class LabelsController {
     @Param('labelId', ParseUUIDPipe)
     labelId: string,
   ) {
-    return this.labelsService.removeLabel(
-      user.id,
-      taskId,
-      labelId,
-    );
+    return this.labelsService.removeLabel(user.id, taskId, labelId);
   }
 }

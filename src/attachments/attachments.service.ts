@@ -15,11 +15,7 @@ import { checkProjectPermission } from '../common/utils/project-permission';
 export class AttachmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async upload(
-    userId: string,
-    taskId: string,
-    file: Express.Multer.File,
-  ) {
+  async upload(userId: string, taskId: string, file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('File is required');
     }
@@ -34,16 +30,14 @@ export class AttachmentsService {
       if (file.path && existsSync(file.path)) {
         try {
           unlinkSync(file.path);
-        } catch {}
+        } catch {
+          // File may already be unlinked
+        }
       }
       throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -88,10 +82,7 @@ export class AttachmentsService {
     });
   }
 
-  async findAll(
-    userId: string,
-    taskId: string,
-  ) {
+  async findAll(userId: string, taskId: string) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -102,11 +93,7 @@ export class AttachmentsService {
       throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -135,10 +122,7 @@ export class AttachmentsService {
     });
   }
 
-  async remove(
-    userId: string,
-    id: string,
-  ) {
+  async remove(userId: string, id: string) {
     const attachment = await this.prisma.attachment.findUnique({
       where: {
         id,
@@ -171,7 +155,9 @@ export class AttachmentsService {
     if (existsSync(diskPath)) {
       try {
         unlinkSync(diskPath);
-      } catch {}
+      } catch {
+        // File may already be unlinked
+      }
     }
 
     return this.prisma.$transaction(async (tx) => {

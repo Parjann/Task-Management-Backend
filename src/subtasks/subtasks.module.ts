@@ -4,6 +4,6 @@ import { SubtasksService } from './subtasks.service';
 
 @Module({
   controllers: [SubtasksController],
-  providers: [SubtasksService]
+  providers: [SubtasksService],
 })
 export class SubtasksModule {}

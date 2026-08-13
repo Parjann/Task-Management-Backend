@@ -17,61 +17,53 @@ export class ProjectsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateProjectDto) {
-  const existingProject = await this.prisma.project.findUnique({
-    where: {
-      key: dto.key,
-    },
-  });
+    const existingProject = await this.prisma.project.findUnique({
+      where: {
+        key: dto.key,
+      },
+    });
 
-  if (existingProject) {
-    throw new BadRequestException('Project key already exists');
-  }
+    if (existingProject) {
+      throw new BadRequestException('Project key already exists');
+    }
 
-  const project = await this.prisma.project.create({
-    data: {
-      name: dto.name,
-      key: dto.key.toUpperCase(),
-      description: dto.description,
-      color: dto.color,
-      ownerId: userId,
+    const project = await this.prisma.project.create({
+      data: {
+        name: dto.name,
+        key: dto.key.toUpperCase(),
+        description: dto.description,
+        color: dto.color,
+        ownerId: userId,
 
-      members: {
-        create: {
-          userId,
-          role: ProjectRole.OWNER,
+        members: {
+          create: {
+            userId,
+            role: ProjectRole.OWNER,
+          },
         },
       },
-    },
 
-    include: {
-      owner: true,
-      members: true,
-    },
-  });
+      include: {
+        owner: true,
+        members: true,
+      },
+    });
 
-  return {
-    message: 'Project created successfully',
-    project,
-  };
-}
+    return {
+      message: 'Project created successfully',
+      project,
+    };
+  }
 
   async findAll(userId: string) {}
 
   async findOne(projectId: string, userId: string) {}
 
-  async update(
-    projectId: string,
-    userId: string,
-    dto: UpdateProjectDto,
-  ) {}
+  async update(projectId: string, userId: string, dto: UpdateProjectDto) {}
 
   async remove(projectId: string, userId: string) {}
 
   async getMembers(projectId: string, userId: string) {}
 
-  async addMember(
-    projectId: string,
-    userId: string,
-    dto: AddMemberDto,
-  ) {}
+  async addMember(projectId: string, userId: string, dto: AddMemberDto) {}
 }

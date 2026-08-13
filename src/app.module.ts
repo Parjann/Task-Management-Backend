@@ -12,6 +12,7 @@ import { ActivityModule } from './activity/activity.module';
 import { PreferencesModule } from './preferences/preferences.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -35,6 +36,7 @@ import { ConfigModule } from '@nestjs/config';
     PreferencesModule,
     DashboardModule,
     AttachmentsModule,
+    NotificationsModule,
   ],
 
   controllers: [AppController],

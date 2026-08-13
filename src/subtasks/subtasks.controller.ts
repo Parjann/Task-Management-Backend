@@ -8,11 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { SubtasksService } from './subtasks.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -23,9 +19,7 @@ import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 @ApiBearerAuth()
 @Controller()
 export class SubtasksController {
-  constructor(
-    private readonly subtasksService: SubtasksService,
-  ) {}
+  constructor(private readonly subtasksService: SubtasksService) {}
 
   @Post('tasks/:taskId/subtasks')
   @ApiOperation({
@@ -36,25 +30,15 @@ export class SubtasksController {
     @Param('taskId') taskId: string,
     @Body() dto: CreateSubtaskDto,
   ) {
-    return this.subtasksService.create(
-      user.id,
-      taskId,
-      dto,
-    );
+    return this.subtasksService.create(user.id, taskId, dto);
   }
 
   @Get('tasks/:taskId/subtasks')
   @ApiOperation({
     summary: 'Get Task Subtasks',
   })
-  findAll(
-    @CurrentUser() user: any,
-    @Param('taskId') taskId: string,
-  ) {
-    return this.subtasksService.findAll(
-      user.id,
-      taskId,
-    );
+  findAll(@CurrentUser() user: any, @Param('taskId') taskId: string) {
+    return this.subtasksService.findAll(user.id, taskId);
   }
 
   @Patch('subtasks/:id')
@@ -66,24 +50,14 @@ export class SubtasksController {
     @Param('id') id: string,
     @Body() dto: UpdateSubtaskDto,
   ) {
-    return this.subtasksService.update(
-      user.id,
-      id,
-      dto,
-    );
+    return this.subtasksService.update(user.id, id, dto);
   }
 
   @Delete('subtasks/:id')
   @ApiOperation({
     summary: 'Delete Subtask',
   })
-  remove(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
-    return this.subtasksService.remove(
-      user.id,
-      id,
-    );
+  remove(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.subtasksService.remove(user.id, id);
   }
 }

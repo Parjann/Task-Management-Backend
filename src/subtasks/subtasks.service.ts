@@ -1,12 +1,6 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
-import {
-  ActivityAction,
-  ProjectRole,
-} from '@prisma/client';
+import { ActivityAction, ProjectRole } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { getProjectMember } from '../common/utils/get-project-member';
@@ -18,11 +12,7 @@ import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 export class SubtasksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    userId: string,
-    taskId: string,
-    dto: CreateSubtaskDto,
-  ) {
+  async create(userId: string, taskId: string, dto: CreateSubtaskDto) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -33,11 +23,7 @@ export class SubtasksService {
       throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -73,10 +59,7 @@ export class SubtasksService {
     });
   }
 
-  async findAll(
-    userId: string,
-    taskId: string,
-  ) {
+  async findAll(userId: string, taskId: string) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -87,11 +70,7 @@ export class SubtasksService {
       throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -110,11 +89,7 @@ export class SubtasksService {
     });
   }
 
-  async update(
-    userId: string,
-    id: string,
-    dto: UpdateSubtaskDto,
-  ) {
+  async update(userId: string, id: string, dto: UpdateSubtaskDto) {
     const subtask = await this.prisma.subtask.findUnique({
       where: {
         id,
@@ -148,10 +123,7 @@ export class SubtasksService {
     });
   }
 
-  async remove(
-    userId: string,
-    id: string,
-  ) {
+  async remove(userId: string, id: string) {
     const subtask = await this.prisma.subtask.findUnique({
       where: {
         id,

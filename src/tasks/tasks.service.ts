@@ -11,10 +11,7 @@ import { GetTasksDto } from './dto/get-tasks.dto';
 import { MoveTaskDto } from './dto/move-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
-import {
-  ActivityAction,
-  ProjectRole,
-} from '@prisma/client';
+import { ActivityAction, Prisma, ProjectRole } from '@prisma/client';
 
 import { getProjectMember } from '../common/utils/get-project-member';
 import { checkProjectPermission } from '../common/utils/project-permission';
@@ -36,11 +33,7 @@ export class TasksService {
     }
 
     // Check project permission
-    const member = await getProjectMember(
-      this.prisma,
-      dto.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, dto.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -50,13 +43,12 @@ export class TasksService {
 
     // Validate assignee
     if (dto.assigneeId) {
-      const assigneeMember =
-        await this.prisma.projectMember.findFirst({
-          where: {
-            projectId: dto.projectId,
-            userId: dto.assigneeId,
-          },
-        });
+      const assigneeMember = await this.prisma.projectMember.findFirst({
+        where: {
+          projectId: dto.projectId,
+          userId: dto.assigneeId,
+        },
+      });
 
       if (!assigneeMember) {
         throw new BadRequestException(
@@ -67,13 +59,12 @@ export class TasksService {
 
     // Validate reporter
     if (dto.reporterId) {
-      const reporterMember =
-        await this.prisma.projectMember.findFirst({
-          where: {
-            projectId: dto.projectId,
-            userId: dto.reporterId,
-          },
-        });
+      const reporterMember = await this.prisma.projectMember.findFirst({
+        where: {
+          projectId: dto.projectId,
+          userId: dto.reporterId,
+        },
+      });
 
       if (!reporterMember) {
         throw new BadRequestException(
@@ -100,9 +91,7 @@ export class TasksService {
 
           status: dto.status,
 
-          dueDate: dto.dueDate
-            ? new Date(dto.dueDate)
-            : null,
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
 
           orderIndex: dto.orderIndex ?? 0,
         },
@@ -131,10 +120,7 @@ export class TasksService {
     });
   }
 
-  async findAll(
-    userId: string,
-    query: GetTasksDto,
-  ) {
+  async findAll(userId: string, query: GetTasksDto) {
     // Check project exists
     const project = await this.prisma.project.findUnique({
       where: {
@@ -147,11 +133,7 @@ export class TasksService {
     }
 
     // Check membership
-    const member = await getProjectMember(
-      this.prisma,
-      query.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, query.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -161,7 +143,7 @@ export class TasksService {
     ]);
 
     // Dynamic filters
-    const where: any = {
+    const where: Prisma.TaskWhereInput = {
       projectId: query.projectId,
     };
 
@@ -246,10 +228,7 @@ export class TasksService {
     };
   }
 
-  async findOne(
-    userId: string,
-    taskId: string,
-  ) {
+  async findOne(userId: string, taskId: string) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -309,16 +288,10 @@ export class TasksService {
     });
 
     if (!task) {
-      throw new NotFoundException(
-        'Task not found',
-      );
+      throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -327,9 +300,7 @@ export class TasksService {
       ProjectRole.VIEWER,
     ]);
 
-    const completedSubtasks = task.subtasks.filter(
-      (s) => s.isCompleted,
-    ).length;
+    const completedSubtasks = task.subtasks.filter((s) => s.isCompleted).length;
     const totalSubtasks = task.subtasks.length;
 
     return {
@@ -345,11 +316,7 @@ export class TasksService {
     };
   }
 
-  async update(
-    userId: string,
-    taskId: string,
-    dto: UpdateTaskDto,
-  ) {
+  async update(userId: string, taskId: string, dto: UpdateTaskDto) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -357,16 +324,10 @@ export class TasksService {
     });
 
     if (!task) {
-      throw new NotFoundException(
-        'Task not found',
-      );
+      throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,
@@ -413,9 +374,7 @@ export class TasksService {
         data: {
           ...dto,
 
-          dueDate: dto.dueDate
-            ? new Date(dto.dueDate)
-            : undefined,
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         },
 
         include: {
@@ -446,10 +405,7 @@ export class TasksService {
     });
   }
 
-  async remove(
-    userId: string,
-    taskId: string,
-  ) {
+  async remove(userId: string, taskId: string) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -457,21 +413,12 @@ export class TasksService {
     });
 
     if (!task) {
-      throw new NotFoundException(
-        'Task not found',
-      );
+      throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
-    checkProjectPermission(member.role, [
-      ProjectRole.OWNER,
-      ProjectRole.ADMIN,
-    ]);
+    checkProjectPermission(member.role, [ProjectRole.OWNER, ProjectRole.ADMIN]);
 
     return this.prisma.$transaction(async (tx) => {
       await tx.activity.create({
@@ -495,11 +442,7 @@ export class TasksService {
     });
   }
 
-  async move(
-    userId: string,
-    taskId: string,
-    dto: MoveTaskDto,
-  ) {
+  async move(userId: string, taskId: string, dto: MoveTaskDto) {
     const task = await this.prisma.task.findUnique({
       where: {
         id: taskId,
@@ -510,11 +453,7 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    const member = await getProjectMember(
-      this.prisma,
-      task.projectId,
-      userId,
-    );
+    const member = await getProjectMember(this.prisma, task.projectId, userId);
 
     checkProjectPermission(member.role, [
       ProjectRole.OWNER,

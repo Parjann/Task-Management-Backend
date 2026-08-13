@@ -14,9 +14,7 @@ export async function getProjectMember(
   });
 
   if (!member) {
-    throw new NotFoundException(
-      'You are not a member of this project.',
-    );
+    throw new NotFoundException('You are not a member of this project.');
   }
 
   return member;

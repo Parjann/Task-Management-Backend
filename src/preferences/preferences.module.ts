@@ -4,6 +4,6 @@ import { PreferencesService } from './preferences.service';
 
 @Module({
   controllers: [PreferencesController],
-  providers: [PreferencesService]
+  providers: [PreferencesService],
 })
 export class PreferencesModule {}

@@ -89,10 +89,7 @@ export class AttachmentsController {
   @ApiOperation({
     summary: 'Delete Attachment',
   })
-  remove(
-    @CurrentUser() user: any,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  remove(@CurrentUser() user: any, @Param('id', ParseUUIDPipe) id: string) {
     return this.attachmentsService.remove(user.id, id);
   }
 }

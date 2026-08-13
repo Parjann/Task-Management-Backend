@@ -9,11 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -33,10 +29,7 @@ export class TasksController {
   @ApiOperation({
     summary: 'Create Task',
   })
-  create(
-    @CurrentUser() user: any,
-    @Body() dto: CreateTaskDto,
-  ) {
+  create(@CurrentUser() user: any, @Body() dto: CreateTaskDto) {
     return this.tasksService.create(user.id, dto);
   }
 
@@ -44,10 +37,7 @@ export class TasksController {
   @ApiOperation({
     summary: 'Get All Tasks',
   })
-  findAll(
-    @CurrentUser() user: any,
-    @Query() query: GetTasksDto,
-  ) {
+  findAll(@CurrentUser() user: any, @Query() query: GetTasksDto) {
     return this.tasksService.findAll(user.id, query);
   }
 
@@ -55,14 +45,8 @@ export class TasksController {
   @ApiOperation({
     summary: 'Get Task By Id',
   })
-  findOne(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
-    return this.tasksService.findOne(
-      user.id,
-      id,
-    );
+  findOne(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.tasksService.findOne(user.id, id);
   }
 
   @Patch(':id')
@@ -74,11 +58,7 @@ export class TasksController {
     @Param('id') id: string,
     @Body() dto: UpdateTaskDto,
   ) {
-    return this.tasksService.update(
-      user.id,
-      id,
-      dto,
-    );
+    return this.tasksService.update(user.id, id, dto);
   }
 
   @Patch(':id/move')
@@ -90,24 +70,14 @@ export class TasksController {
     @Param('id') id: string,
     @Body() dto: MoveTaskDto,
   ) {
-    return this.tasksService.move(
-      user.id,
-      id,
-      dto,
-    );
+    return this.tasksService.move(user.id, id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete Task',
   })
-  remove(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
-    return this.tasksService.remove(
-      user.id,
-      id,
-    );
+  remove(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.tasksService.remove(user.id, id);
   }
 }

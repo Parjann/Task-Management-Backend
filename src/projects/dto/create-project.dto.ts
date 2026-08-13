@@ -1,4 +1,10 @@
-import { IsHexColor, IsOptional, IsString, Length, Matches } from 'class-validator';
+import {
+  IsHexColor,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+} from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()

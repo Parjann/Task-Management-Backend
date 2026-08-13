@@ -8,11 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { ProjectsService } from './projects.service';
 
@@ -30,10 +26,7 @@ export class ProjectsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new project' })
-  create(
-    @CurrentUser() user: any,
-    @Body() dto: CreateProjectDto,
-  ) {
+  create(@CurrentUser() user: any, @Body() dto: CreateProjectDto) {
     return this.projectsService.create(user.id, dto);
   }
 
@@ -45,10 +38,7 @@ export class ProjectsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get project by id' })
-  findOne(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
+  findOne(@CurrentUser() user: any, @Param('id') id: string) {
     return this.projectsService.findOne(id, user.id);
   }
 
@@ -64,19 +54,13 @@ export class ProjectsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete project' })
-  remove(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
+  remove(@CurrentUser() user: any, @Param('id') id: string) {
     return this.projectsService.remove(id, user.id);
   }
 
   @Get(':id/members')
   @ApiOperation({ summary: 'Get project members' })
-  getMembers(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
+  getMembers(@CurrentUser() user: any, @Param('id') id: string) {
     return this.projectsService.getMembers(id, user.id);
   }
 

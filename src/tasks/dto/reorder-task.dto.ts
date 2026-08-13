@@ -1,8 +1,4 @@
-import {
-  IsEnum,
-  IsNumber,
-  IsUUID,
-} from 'class-validator';
+import { IsEnum, IsNumber, IsUUID } from 'class-validator';
 
 import { TaskStatus } from '@prisma/client';
 

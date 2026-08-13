@@ -8,9 +8,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   @Get('me')
   async getProfile(@CurrentUser() user: any) {
