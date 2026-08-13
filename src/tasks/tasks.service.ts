@@ -295,6 +295,16 @@ export class TasksService {
             createdAt: 'desc',
           },
         },
+
+        attachments: {
+          include: {
+            user: true,
+          },
+
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       },
     });
 
