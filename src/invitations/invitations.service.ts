@@ -12,7 +12,7 @@ import {
 } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
+import { EmailQueueService } from '../infrastructure/queues/email/email.service';
 import { WebsocketService } from '../websocket/websocket.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { getProjectMember } from '../common/utils/get-project-member';
@@ -23,7 +23,7 @@ import { CreateInvitationDto } from './dto/create-invitation.dto';
 export class InvitationsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mailService: MailService,
+    private readonly emailQueueService: EmailQueueService,
     private readonly websocketService: WebsocketService,
     private readonly notificationsService: NotificationsService,
   ) {}
@@ -114,7 +114,7 @@ export class InvitationsService {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const inviteUrl = `${frontendUrl}/invitations/${token}`;
 
-    await this.mailService.sendProjectInvitation({
+    await this.emailQueueService.sendInvitationEmail({
       to: dto.email.toLowerCase(),
       inviterName: inviter?.name || 'A team member',
       projectName: project.name,
