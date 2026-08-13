@@ -18,6 +18,7 @@ import { WebsocketModule } from './websocket/websocket.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { MailModule } from './mail/mail.module';
 import { InvitationsModule } from './invitations/invitations.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { FcmModule } from './fcm/fcm.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
@@ -57,6 +58,7 @@ import { ConfigModule } from '@nestjs/config';
     CalendarModule,
     MailModule,
     InvitationsModule,
+    SchedulerModule,
   ],
 
   controllers: [AppController],
