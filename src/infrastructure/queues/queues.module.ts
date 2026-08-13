@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { EmailQueueModule } from './email/email.module';
 import { PushQueueModule } from './push/push.module';
 import { NotificationQueueModule } from './notification/notification.module';
+import { ActivityQueueModule } from './activity/activity.module';
 
 @Global()
 @Module({
@@ -15,12 +16,14 @@ import { NotificationQueueModule } from './notification/notification.module';
     EmailQueueModule,
     PushQueueModule,
     NotificationQueueModule,
+    ActivityQueueModule,
   ],
   exports: [
     BullModule,
     EmailQueueModule,
     PushQueueModule,
     NotificationQueueModule,
+    ActivityQueueModule,
   ],
 })
 export class QueuesModule {}

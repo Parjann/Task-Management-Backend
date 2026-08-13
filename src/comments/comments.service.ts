@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { getProjectMember } from '../common/utils/get-project-member';
 import { checkProjectPermission } from '../common/utils/project-permission';
 import { WebsocketService } from '../websocket/websocket.service';
+import { ActivityQueueService } from '../infrastructure/queues/activity/activity.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
@@ -18,6 +19,7 @@ export class CommentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly websocketService: WebsocketService,
+    private readonly activityQueueService: ActivityQueueService,
   ) {}
 
   async create(userId: string, taskId: string, dto: CreateCommentDto) {
@@ -39,28 +41,22 @@ export class CommentsService {
       ProjectRole.MEMBER,
     ]);
 
-    const comment = await this.prisma.$transaction(async (tx) => {
-      const createdComment = await tx.comment.create({
-        data: {
-          content: dto.content,
-          taskId,
-          userId,
-        },
-        include: {
-          user: true,
-        },
-      });
+    const comment = await this.prisma.comment.create({
+      data: {
+        content: dto.content,
+        taskId,
+        userId,
+      },
+      include: {
+        user: true,
+      },
+    });
 
-      await tx.activity.create({
-        data: {
-          taskId,
-          userId,
-          action: ActivityAction.COMMENT_ADDED,
-          message: 'Comment added',
-        },
-      });
-
-      return createdComment;
+    await this.activityQueueService.createActivity({
+      taskId,
+      userId,
+      action: ActivityAction.COMMENT_ADDED,
+      message: 'Comment added',
     });
 
     this.websocketService.emitToProject(

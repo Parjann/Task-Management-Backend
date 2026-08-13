@@ -10,10 +10,14 @@ import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { getProjectMember } from '../common/utils/get-project-member';
 import { checkProjectPermission } from '../common/utils/project-permission';
+import { ActivityQueueService } from '../infrastructure/queues/activity/activity.service';
 
 @Injectable()
 export class AttachmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activityQueueService: ActivityQueueService,
+  ) {}
 
   async upload(userId: string, taskId: string, file: Express.Multer.File) {
     if (!file) {
@@ -47,39 +51,35 @@ export class AttachmentsService {
 
     const fileUrl = `/uploads/${file.filename}`;
 
-    return this.prisma.$transaction(async (tx) => {
-      const attachment = await tx.attachment.create({
-        data: {
-          fileName: file.originalname,
-          fileUrl,
-          mimeType: file.mimetype,
-          fileSize: file.size,
-          taskId,
-          uploadedBy: userId,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatarUrl: true,
-            },
+    const attachment = await this.prisma.attachment.create({
+      data: {
+        fileName: file.originalname,
+        fileUrl,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        taskId,
+        uploadedBy: userId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
           },
         },
-      });
-
-      await tx.activity.create({
-        data: {
-          taskId,
-          userId,
-          action: ActivityAction.ATTACHMENT_UPLOADED,
-          message: `Attached file "${file.originalname}"`,
-        },
-      });
-
-      return attachment;
+      },
     });
+
+    await this.activityQueueService.createActivity({
+      taskId,
+      userId,
+      action: ActivityAction.ATTACHMENT_UPLOADED,
+      message: `Attached file "${file.originalname}"`,
+    });
+
+    return attachment;
   }
 
   async findAll(userId: string, taskId: string) {
@@ -160,25 +160,21 @@ export class AttachmentsService {
       }
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      await tx.attachment.delete({
-        where: {
-          id,
-        },
-      });
-
-      await tx.activity.create({
-        data: {
-          taskId: attachment.taskId,
-          userId,
-          action: ActivityAction.ATTACHMENT_DELETED,
-          message: `Removed attachment "${attachment.fileName}"`,
-        },
-      });
-
-      return {
-        message: 'Attachment deleted successfully',
-      };
+    await this.prisma.attachment.delete({
+      where: {
+        id,
+      },
     });
+
+    await this.activityQueueService.createActivity({
+      taskId: attachment.taskId,
+      userId,
+      action: ActivityAction.ATTACHMENT_DELETED,
+      message: `Removed attachment "${attachment.fileName}"`,
+    });
+
+    return {
+      message: 'Attachment deleted successfully',
+    };
   }
 }

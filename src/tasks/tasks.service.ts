@@ -16,12 +16,14 @@ import { ActivityAction, Prisma, ProjectRole } from '@prisma/client';
 import { getProjectMember } from '../common/utils/get-project-member';
 import { checkProjectPermission } from '../common/utils/project-permission';
 import { WebsocketService } from '../websocket/websocket.service';
+import { ActivityQueueService } from '../infrastructure/queues/activity/activity.service';
 
 @Injectable()
 export class TasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly websocketService: WebsocketService,
+    private readonly activityQueueService: ActivityQueueService,
   ) {}
 
   async create(userId: string, dto: CreateTaskDto) {
@@ -108,19 +110,14 @@ export class TasksService {
         },
       });
 
-      await tx.activity.create({
-        data: {
-          taskId: task.id,
-
-          userId,
-
-          action: ActivityAction.TASK_CREATED,
-
-          message: `Task "${task.title}" created`,
-        },
-      });
-
       return task;
+    });
+
+    await this.activityQueueService.createActivity({
+      taskId: createdTask.id,
+      userId,
+      action: ActivityAction.TASK_CREATED,
+      message: `Task "${createdTask.title}" created`,
     });
 
     this.websocketService.emitToProject(
@@ -401,19 +398,14 @@ export class TasksService {
         },
       });
 
-      await tx.activity.create({
-        data: {
-          taskId,
-
-          userId,
-
-          action: ActivityAction.TASK_UPDATED,
-
-          message: `Task "${updated.title}" updated`,
-        },
-      });
-
       return updated;
+    });
+
+    await this.activityQueueService.createActivity({
+      taskId,
+      userId,
+      action: ActivityAction.TASK_UPDATED,
+      message: `Task "${updatedTask.title}" updated`,
     });
 
     this.websocketService.emitToProject(
@@ -440,25 +432,17 @@ export class TasksService {
 
     checkProjectPermission(member.role, [ProjectRole.OWNER, ProjectRole.ADMIN]);
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      await tx.activity.create({
-        data: {
-          taskId: task.id,
-          userId,
-          action: ActivityAction.TASK_DELETED,
-          message: `Task "${task.title}" deleted`,
-        },
-      });
+    await this.prisma.task.delete({
+      where: {
+        id: taskId,
+      },
+    });
 
-      await tx.task.delete({
-        where: {
-          id: taskId,
-        },
-      });
-
-      return {
-        message: 'Task deleted successfully',
-      };
+    await this.activityQueueService.createActivity({
+      taskId: task.id,
+      userId,
+      action: ActivityAction.TASK_DELETED,
+      message: `Task "${task.title}" deleted`,
     });
 
     this.websocketService.emitToProject(task.projectId, 'task.deleted', {
@@ -466,7 +450,9 @@ export class TasksService {
       projectId: task.projectId,
     });
 
-    return result;
+    return {
+      message: 'Task deleted successfully',
+    };
   }
 
   async move(userId: string, taskId: string, dto: MoveTaskDto) {
@@ -501,13 +487,11 @@ export class TasksService {
     });
 
     if (oldStatus !== dto.status) {
-      await this.prisma.activity.create({
-        data: {
-          taskId,
-          userId,
-          action: ActivityAction.STATUS_CHANGED,
-          message: `Status changed from ${oldStatus} to ${dto.status}`,
-        },
+      await this.activityQueueService.createActivity({
+        taskId,
+        userId,
+        action: ActivityAction.STATUS_CHANGED,
+        message: `Status changed from ${oldStatus} to ${dto.status}`,
       });
     }
 

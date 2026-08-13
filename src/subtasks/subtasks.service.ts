@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { getProjectMember } from '../common/utils/get-project-member';
 import { checkProjectPermission } from '../common/utils/project-permission';
 import { WebsocketService } from '../websocket/websocket.service';
+import { ActivityQueueService } from '../infrastructure/queues/activity/activity.service';
 import { CreateSubtaskDto } from './dto/create-subtask.dto';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 
@@ -14,6 +15,7 @@ export class SubtasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly websocketService: WebsocketService,
+    private readonly activityQueueService: ActivityQueueService,
   ) {}
 
   async create(userId: string, taskId: string, dto: CreateSubtaskDto) {
@@ -41,25 +43,19 @@ export class SubtasksService {
       },
     });
 
-    const subtask = await this.prisma.$transaction(async (tx) => {
-      const createdSubtask = await tx.subtask.create({
-        data: {
-          title: dto.title,
-          taskId,
-          orderIndex: count,
-        },
-      });
+    const subtask = await this.prisma.subtask.create({
+      data: {
+        title: dto.title,
+        taskId,
+        orderIndex: count,
+      },
+    });
 
-      await tx.activity.create({
-        data: {
-          taskId,
-          userId,
-          action: ActivityAction.SUBTASK_CREATED,
-          message: `Subtask "${createdSubtask.title}" created`,
-        },
-      });
-
-      return createdSubtask;
+    await this.activityQueueService.createActivity({
+      taskId,
+      userId,
+      action: ActivityAction.SUBTASK_CREATED,
+      message: `Subtask "${subtask.title}" created`,
     });
 
     this.websocketService.emitToProject(
