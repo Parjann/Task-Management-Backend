@@ -7,21 +7,25 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    const host = process.env.SMTP_HOST;
-    const port = Number(process.env.SMTP_PORT) || 587;
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
+    const host = process.env.MAIL_HOST || process.env.SMTP_HOST;
+    const port = Number(process.env.MAIL_PORT || process.env.SMTP_PORT) || 587;
+    const secure =
+      process.env.MAIL_SECURE === 'true' ||
+      (process.env.MAIL_SECURE !== 'false' && port === 465);
+    const user = process.env.MAIL_USER || process.env.SMTP_USER;
+    const pass = process.env.MAIL_PASSWORD || process.env.SMTP_PASS;
 
     if (host && user && pass) {
       this.transporter = nodemailer.createTransport({
         host,
         port,
-        secure: port === 465,
+        secure,
         auth: {
           user,
           pass,
         },
       });
+      this.logger.log(`🟢 Mail Transporter initialized using ${host}:${port}`);
     } else {
       this.transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
@@ -32,7 +36,7 @@ export class MailService {
         },
       });
       this.logger.warn(
-        '⚠️ SMTP credentials not fully configured in .env. Emails will be logged to console in dev mode.',
+        '⚠️ Mail credentials (MAIL_USER / MAIL_PASSWORD / MAIL_HOST) not fully configured in .env. Emails will be logged to console in dev mode.',
       );
     }
   }
@@ -46,12 +50,15 @@ export class MailService {
   }) {
     const { to, inviterName, projectName, role, inviteUrl } = params;
 
-    const from = process.env.SMTP_FROM || 'TaskFlow <no-reply@taskflow.app>';
-    const subject = `You've been invited to join ${projectName} on TaskFlow`;
+    const from =
+      process.env.MAIL_FROM ||
+      process.env.SMTP_FROM ||
+      'Pyramid <no-reply@pyramid.app>';
+    const subject = `You've been invited to join ${projectName} on Pyramid`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
-        <h2 style="color: #4F46E5;">TaskFlow Workspace Invitation</h2>
+        <h2 style="color: #4F46E5;">Pyramid Workspace Invitation</h2>
         <p>Hello,</p>
         <p><strong>${inviterName}</strong> has invited you to join the <strong>${projectName}</strong> project as a <strong>${role}</strong>.</p>
         <div style="margin: 30px 0; text-align: center;">
@@ -66,7 +73,11 @@ export class MailService {
     `;
 
     try {
-      if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+      const isConfigured =
+        (process.env.MAIL_HOST || process.env.SMTP_HOST) &&
+        (process.env.MAIL_USER || process.env.SMTP_USER);
+
+      if (isConfigured) {
         await this.transporter.sendMail({
           from,
           to,
