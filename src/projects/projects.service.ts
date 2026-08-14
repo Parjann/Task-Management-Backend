@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -55,15 +51,15 @@ export class ProjectsService {
     };
   }
 
-  async findAll(userId: string) {}
+  async findAll(_userId: string) {}
 
-  async findOne(projectId: string, userId: string) {}
+  async findOne(_projectId: string, _userId: string) {}
 
-  async update(projectId: string, userId: string, dto: UpdateProjectDto) {}
+  async update(_projectId: string, _userId: string, _dto: UpdateProjectDto) {}
 
-  async remove(projectId: string, userId: string) {}
+  async remove(_projectId: string, _userId: string) {}
 
-  async getMembers(projectId: string, userId: string) {}
+  async getMembers(_projectId: string, _userId: string) {}
 
-  async addMember(projectId: string, userId: string, dto: AddMemberDto) {}
+  async addMember(_projectId: string, _userId: string, _dto: AddMemberDto) {}
 }

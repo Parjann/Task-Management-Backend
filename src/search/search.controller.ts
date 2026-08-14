@@ -1,14 +1,6 @@
-import {
-  Controller,
-  Get,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { SearchService } from './search.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -24,10 +16,7 @@ export class SearchController {
   @ApiOperation({
     summary: 'Global Search',
   })
-  search(
-    @CurrentUser() user: any,
-    @Query() query: SearchDto,
-  ) {
+  search(@CurrentUser() user: any, @Query() query: SearchDto) {
     return this.searchService.globalSearch(user.id, query.q);
   }
 
@@ -35,10 +24,7 @@ export class SearchController {
   @ApiOperation({
     summary: 'Search Tasks',
   })
-  searchTasks(
-    @CurrentUser() user: any,
-    @Query() query: SearchDto,
-  ) {
+  searchTasks(@CurrentUser() user: any, @Query() query: SearchDto) {
     return this.searchService.searchTasks(user.id, query.q);
   }
 
@@ -46,10 +32,7 @@ export class SearchController {
   @ApiOperation({
     summary: 'Search Projects',
   })
-  searchProjects(
-    @CurrentUser() user: any,
-    @Query() query: SearchDto,
-  ) {
+  searchProjects(@CurrentUser() user: any, @Query() query: SearchDto) {
     return this.searchService.searchProjects(user.id, query.q);
   }
 
@@ -57,10 +40,7 @@ export class SearchController {
   @ApiOperation({
     summary: 'Search Users',
   })
-  searchUsers(
-    @CurrentUser() user: any,
-    @Query() query: SearchDto,
-  ) {
+  searchUsers(@CurrentUser() user: any, @Query() query: SearchDto) {
     return this.searchService.searchUsers(user.id, query.q);
   }
 
@@ -68,10 +48,7 @@ export class SearchController {
   @ApiOperation({
     summary: 'Search Comments',
   })
-  searchComments(
-    @CurrentUser() user: any,
-    @Query() query: SearchDto,
-  ) {
+  searchComments(@CurrentUser() user: any, @Query() query: SearchDto) {
     return this.searchService.searchComments(user.id, query.q);
   }
 }

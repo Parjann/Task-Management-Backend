@@ -121,7 +121,7 @@ export class AuthService {
   }
 
   async generateToken(user: User) {
-    return this.jwtService.sign({
+    return await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
       isGuest: user.isGuest,
