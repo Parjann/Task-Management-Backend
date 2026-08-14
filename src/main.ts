@@ -44,7 +44,7 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api', {
-    exclude: ['admin/queues', 'admin/queues/(.*)'],
+    exclude: ['admin/queues', 'admin/queues/(.*)', 'health', 'health/(.*)'],
   });
 
   const swaggerConfig = new DocumentBuilder()

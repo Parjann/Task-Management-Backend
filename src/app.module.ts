@@ -19,6 +19,7 @@ import { CalendarModule } from './calendar/calendar.module';
 import { MailModule } from './mail/mail.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { HealthModule } from './health/health.module';
 import { AppBullBoardModule } from './bull-board/bull-board.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AppLoggerModule } from './logger/logger.module';
@@ -74,6 +75,7 @@ import { ConfigModule } from '@nestjs/config';
     MailModule,
     InvitationsModule,
     SchedulerModule,
+    HealthModule,
   ],
 
   controllers: [AppController],
