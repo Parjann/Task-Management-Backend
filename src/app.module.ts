@@ -21,6 +21,7 @@ import { InvitationsModule } from './invitations/invitations.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { AppBullBoardModule } from './bull-board/bull-board.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { AppLoggerModule } from './logger/logger.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { FcmModule } from './fcm/fcm.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
@@ -36,6 +37,8 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    AppLoggerModule,
 
     ThrottlerModule.forRoot([
       {

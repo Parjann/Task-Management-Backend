@@ -3,14 +3,21 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { Logger } from 'nestjs-pino';
 
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
 import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
+import { LoggingExceptionFilter } from './common/filters/logging-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
+
+  const logger = app.get(Logger);
+  app.useLogger(logger);
 
   const configService = app.get(ConfigService);
 
@@ -31,7 +38,10 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new ThrottlerExceptionFilter());
+  app.useGlobalFilters(
+    app.get(LoggingExceptionFilter),
+    new ThrottlerExceptionFilter(),
+  );
 
   app.setGlobalPrefix('api', {
     exclude: ['admin/queues', 'admin/queues/(.*)'],
@@ -52,8 +62,8 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`📚 Swagger Docs: http://localhost:${port}/api/docs`);
+  logger.log(`🚀 Server running on http://localhost:${port}`);
+  logger.log(`📚 Swagger Docs: http://localhost:${port}/api/docs`);
 }
 
 void bootstrap();
