@@ -47,6 +47,25 @@ export class FirebaseService implements OnModuleInit {
         this.logger.log(
           '🔥 Firebase Admin SDK initialized successfully via service-account.json',
         );
+      } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        let rawContent = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+        // Handle potential base64 encoded string
+        if (
+          !rawContent.startsWith('{') &&
+          /^[A-Za-z0-9+/=]+$/.test(rawContent)
+        ) {
+          rawContent = Buffer.from(rawContent, 'base64').toString('utf8');
+        }
+
+        const serviceAccount = JSON.parse(rawContent) as ServiceAccount;
+
+        this.app = initializeApp({
+          credential: cert(serviceAccount),
+        });
+        this.isInitialized = true;
+        this.logger.log(
+          '🔥 Firebase Admin SDK initialized successfully via FIREBASE_SERVICE_ACCOUNT',
+        );
       } else if (
         process.env.FIREBASE_PROJECT_ID &&
         process.env.FIREBASE_CLIENT_EMAIL &&
