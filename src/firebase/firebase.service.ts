@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   initializeApp,
   getApps,
@@ -8,6 +13,7 @@ import {
   ServiceAccount,
 } from 'firebase-admin/app';
 import { getMessaging, Messaging } from 'firebase-admin/messaging';
+import { getAuth, Auth, DecodedIdToken } from 'firebase-admin/auth';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -99,5 +105,28 @@ export class FirebaseService implements OnModuleInit {
       return getMessaging(this.app);
     }
     return null;
+  }
+
+  get auth(): Auth | null {
+    if (this.isInitialized && this.app) {
+      return getAuth(this.app);
+    }
+    return null;
+  }
+
+  async verifyIdToken(idToken: string): Promise<DecodedIdToken> {
+    if (!this.auth) {
+      throw new UnauthorizedException(
+        'Firebase authentication is not initialized on the server',
+      );
+    }
+    try {
+      return await this.auth.verifyIdToken(idToken);
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Token verification error';
+      this.logger.error(`❌ Firebase verifyIdToken failed: ${msg}`);
+      throw new UnauthorizedException('Invalid or expired Firebase ID token');
+    }
   }
 }

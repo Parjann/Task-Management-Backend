@@ -7,10 +7,11 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 
-// Change this import if your Prisma client is generated elsewhere
 import { User } from '@prisma/client';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly firebaseService: FirebaseService,
   ) {}
 
   /**
@@ -95,6 +97,52 @@ export class AuthService {
 
     return {
       message: 'Login successful',
+      user: this.sanitizeUser(user),
+      accessToken: token,
+    };
+  }
+
+  async loginWithGoogle(dto: GoogleLoginDto) {
+    const decodedToken = await this.firebaseService.verifyIdToken(dto.idToken);
+
+    const email = decodedToken.email;
+    if (!email) {
+      throw new UnauthorizedException(
+        'Google account must have an associated email address',
+      );
+    }
+
+    let user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (user) {
+      if (!user.avatarUrl && decodedToken.picture) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            avatarUrl: decodedToken.picture,
+          },
+        });
+      }
+    } else {
+      const name = decodedToken.name || email.split('@')[0];
+      user = await this.prisma.user.create({
+        data: {
+          name,
+          email,
+          avatarUrl: decodedToken.picture || null,
+          isGuest: false,
+        },
+      });
+    }
+
+    const token = await this.generateToken(user);
+
+    return {
+      message: 'Google login successful',
       user: this.sanitizeUser(user),
       accessToken: token,
     };
