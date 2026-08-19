@@ -25,8 +25,14 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
+  // CORS configuration
+  // Uses FRONTEND_URL in production and falls back
+  // to localhost for local development.
+  const frontendUrl =
+    configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: frontendUrl,
     credentials: true,
   });
 
@@ -44,7 +50,12 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api', {
-    exclude: ['admin/queues', 'admin/queues/(.*)', 'health', 'health/(.*)'],
+    exclude: [
+      'admin/queues',
+      'admin/queues/(.*)',
+      'health',
+      'health/(.*)',
+    ],
   });
 
   const swaggerConfig = new DocumentBuilder()
@@ -63,6 +74,7 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(`🚀 Server running on http://localhost:${port}`);
+  logger.log(`🌐 Frontend URL: ${frontendUrl}`);
   logger.log(`📚 Swagger Docs: http://localhost:${port}/api/docs`);
 }
 
