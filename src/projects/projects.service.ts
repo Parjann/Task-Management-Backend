@@ -60,11 +60,16 @@ export class ProjectsService {
   async findAll(userId: string) {
     return this.prisma.project.findMany({
       where: {
-        members: {
-          some: {
-            userId,
+        OR: [
+          { ownerId: userId },
+          {
+            members: {
+              some: {
+                userId,
+              },
+            },
           },
-        },
+        ],
       },
       include: {
         owner: true,

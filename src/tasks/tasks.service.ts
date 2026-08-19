@@ -157,13 +157,24 @@ export class TasksService {
     const where: Prisma.TaskWhereInput = query.projectId
       ? { projectId: query.projectId }
       : {
-          project: {
-            members: {
-              some: {
-                userId,
+          OR: [
+            { creatorId: userId },
+            { assigneeId: userId },
+            {
+              project: {
+                OR: [
+                  { ownerId: userId },
+                  {
+                    members: {
+                      some: {
+                        userId,
+                      },
+                    },
+                  },
+                ],
               },
             },
-          },
+          ],
         };
 
     if (query.status) {
