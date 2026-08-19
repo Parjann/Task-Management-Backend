@@ -130,31 +130,41 @@ export class TasksService {
   }
 
   async findAll(userId: string, query: GetTasksDto) {
-    // Check project exists
-    const project = await this.prisma.project.findUnique({
-      where: {
-        id: query.projectId,
-      },
-    });
+    if (query.projectId) {
+      // Check project exists
+      const project = await this.prisma.project.findUnique({
+        where: {
+          id: query.projectId,
+        },
+      });
 
-    if (!project) {
-      throw new NotFoundException('Project not found');
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+
+      // Check membership
+      const member = await getProjectMember(this.prisma, query.projectId, userId);
+
+      checkProjectPermission(member.role, [
+        ProjectRole.OWNER,
+        ProjectRole.ADMIN,
+        ProjectRole.MEMBER,
+        ProjectRole.VIEWER,
+      ]);
     }
 
-    // Check membership
-    const member = await getProjectMember(this.prisma, query.projectId, userId);
-
-    checkProjectPermission(member.role, [
-      ProjectRole.OWNER,
-      ProjectRole.ADMIN,
-      ProjectRole.MEMBER,
-      ProjectRole.VIEWER,
-    ]);
-
     // Dynamic filters
-    const where: Prisma.TaskWhereInput = {
-      projectId: query.projectId,
-    };
+    const where: Prisma.TaskWhereInput = query.projectId
+      ? { projectId: query.projectId }
+      : {
+          project: {
+            members: {
+              some: {
+                userId,
+              },
+            },
+          },
+        };
 
     if (query.status) {
       where.status = query.status;

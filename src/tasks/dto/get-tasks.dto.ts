@@ -5,8 +5,9 @@ import { Type } from 'class-transformer';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 
 export class GetTasksDto {
+  @IsOptional()
   @IsString()
-  projectId: string;
+  projectId?: string;
 
   @IsOptional()
   @IsEnum(TaskStatus)
@@ -34,7 +35,7 @@ export class GetTasksDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  limit = 10;
+  limit = 50;
 
   @IsOptional()
   @IsString()

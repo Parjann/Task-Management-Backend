@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -10,12 +15,12 @@ import { ProjectRole } from '@prisma/client';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(userId: string, dto: CreateProjectDto) {
     const existingProject = await this.prisma.project.findUnique({
       where: {
-        key: dto.key,
+        key: dto.key.toUpperCase(),
       },
     });
 
@@ -41,25 +46,164 @@ export class ProjectsService {
 
       include: {
         owner: true,
-        members: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 
-    return {
-      message: 'Project created successfully',
-      project,
-    };
+    return project;
   }
 
-  async findAll(_userId: string) {}
+  async findAll(userId: string) {
+    return this.prisma.project.findMany({
+      where: {
+        members: {
+          some: {
+            userId,
+          },
+        },
+      },
+      include: {
+        owner: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
+        _count: {
+          select: {
+            tasks: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
 
-  async findOne(_projectId: string, _userId: string) {}
+  async findOne(projectId: string, userId: string) {
+    const project = await this.prisma.project.findFirst({
+      where: {
+        id: projectId,
+        members: {
+          some: {
+            userId,
+          },
+        },
+      },
+      include: {
+        owner: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
+        tasks: true,
+      },
+    });
 
-  async update(_projectId: string, _userId: string, _dto: UpdateProjectDto) {}
+    if (!project) {
+      throw new NotFoundException('Project not found or access denied');
+    }
 
-  async remove(_projectId: string, _userId: string) {}
+    return project;
+  }
 
-  async getMembers(_projectId: string, _userId: string) {}
+  async update(projectId: string, userId: string, dto: UpdateProjectDto) {
+    const member = await this.prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
 
-  async addMember(_projectId: string, _userId: string, _dto: AddMemberDto) {}
+    if (
+      !member ||
+      (member.role !== ProjectRole.OWNER && member.role !== ProjectRole.ADMIN)
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to update this project',
+      );
+    }
+
+    return this.prisma.project.update({
+      where: { id: projectId },
+      data: dto,
+      include: {
+        owner: true,
+        members: true,
+      },
+    });
+  }
+
+  async remove(projectId: string, userId: string) {
+    const member = await this.prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
+
+    if (!member || member.role !== ProjectRole.OWNER) {
+      throw new ForbiddenException('Only the project owner can delete the project');
+    }
+
+    await this.prisma.project.delete({
+      where: { id: projectId },
+    });
+
+    return { message: 'Project deleted successfully' };
+  }
+
+  async getMembers(projectId: string, userId: string) {
+    const member = await this.prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
+
+    if (!member) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.prisma.projectMember.findMany({
+      where: { projectId },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  async addMember(projectId: string, userId: string, dto: AddMemberDto) {
+    const currentMember = await this.prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
+
+    if (
+      !currentMember ||
+      (currentMember.role !== ProjectRole.OWNER &&
+        currentMember.role !== ProjectRole.ADMIN)
+    ) {
+      throw new ForbiddenException('You do not have permission to add members');
+    }
+
+    return this.prisma.projectMember.create({
+      data: {
+        projectId,
+        userId: dto.userId,
+        role: dto.role || ProjectRole.MEMBER,
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
 }
