@@ -25,14 +25,16 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
-  // CORS configuration
-  // Uses FRONTEND_URL in production and falls back
-  // to localhost for local development.
   const frontendUrl =
-    configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    configService.get<string>('FRONTEND_URL') || '';
+
+  const allowedOrigins = [
+    'http://localhost:3000',
+    frontendUrl,
+  ].filter(Boolean);
 
   app.enableCors({
-    origin: frontendUrl,
+    origin: allowedOrigins,
     credentials: true,
   });
 
