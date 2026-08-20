@@ -34,6 +34,8 @@ export class ProjectsService {
         key: dto.key.toUpperCase(),
         description: dto.description,
         color: dto.color,
+        priority: dto.priority,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
         ownerId: userId,
 
         members: {
@@ -57,8 +59,15 @@ export class ProjectsService {
     return project;
   }
 
-  async findAll(_userId: string) {
+  async findAll(userId: string) {
     return this.prisma.project.findMany({
+      where: {
+        members: {
+          some: {
+            userId,
+          },
+        },
+      },
       include: {
         owner: true,
         members: {
@@ -125,7 +134,20 @@ export class ProjectsService {
 
     return this.prisma.project.update({
       where: { id: projectId },
-      data: dto,
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.key !== undefined ? { key: dto.key.toUpperCase() } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
+        ...(dto.color !== undefined ? { color: dto.color } : {}),
+        ...(dto.priority !== undefined ? { priority: dto.priority } : {}),
+        ...(dto.dueDate === null
+          ? { dueDate: null }
+          : dto.dueDate
+            ? { dueDate: new Date(dto.dueDate) }
+            : {}),
+      },
       include: {
         owner: true,
         members: true,
@@ -188,15 +210,63 @@ export class ProjectsService {
       throw new ForbiddenException('You do not have permission to add members');
     }
 
+    const targetUser = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email.toLowerCase(),
+      },
+    });
+
+    if (!targetUser) {
+      throw new BadRequestException(
+        'No account exists for that email. Send an invitation instead.',
+      );
+    }
+
+    const alreadyMember = await this.prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId: targetUser.id,
+      },
+    });
+
+    if (alreadyMember) {
+      throw new BadRequestException('User is already a member of this project');
+    }
+
     return this.prisma.projectMember.create({
       data: {
         projectId,
-        userId: dto.userId,
+        userId: targetUser.id,
         role: dto.role || ProjectRole.MEMBER,
       },
       include: {
         user: true,
       },
     });
+  }
+
+  async leaveProject(projectId: string, userId: string) {
+    const member = await this.prisma.projectMember.findFirst({
+      where: {
+        projectId,
+        userId,
+      },
+    });
+
+    if (!member) {
+      throw new ForbiddenException('You are not a member of this project');
+    }
+
+    if (member.role === ProjectRole.OWNER) {
+      throw new ForbiddenException(
+        'Project owners must delete the project instead of leaving it',
+      );
+    }
+
+    await this.prisma.projectMember.delete({
+      where: { id: member.id },
+    });
+
+    return { message: 'Left project successfully' };
   }
 }

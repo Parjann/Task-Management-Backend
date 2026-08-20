@@ -31,6 +31,8 @@ export class AuthService {
       name: user.name,
       email: user.email,
       avatarUrl: user.avatarUrl,
+      title: user.title,
+      username: user.username,
       isGuest: user.isGuest,
       theme: user.theme,
       accentColor: user.accentColor,

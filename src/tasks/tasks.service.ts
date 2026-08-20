@@ -154,9 +154,15 @@ export class TasksService {
     }
 
     // Dynamic filters
+    const memberships = await this.prisma.projectMember.findMany({
+      where: { userId },
+      select: { projectId: true },
+    });
+    const projectIds = memberships.map((m) => m.projectId);
+
     const where: Prisma.TaskWhereInput = query.projectId
       ? { projectId: query.projectId }
-      : {};
+      : { projectId: { in: projectIds } };
 
     if (query.status) {
       where.status = query.status;
@@ -376,6 +382,8 @@ export class TasksService {
       }
     }
 
+    const { dueDate, ...rest } = dto;
+
     const updatedTask = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.task.update({
         where: {
@@ -383,9 +391,12 @@ export class TasksService {
         },
 
         data: {
-          ...dto,
-
-          dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+          ...rest,
+          ...(dueDate === null
+            ? { dueDate: null }
+            : dueDate
+              ? { dueDate: new Date(dueDate) }
+              : {}),
         },
 
         include: {

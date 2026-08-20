@@ -33,13 +33,20 @@ async function bootstrap() {
   // CORS Configuration
   // --------------------------------------------------
 
-  const frontendUrl =
-    configService.get<string>('FRONTEND_URL') || '';
+  const frontendUrls = (
+    configService.get<string>('FRONTEND_URL') || ''
+  )
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
 
-  const allowedOrigins = [
-    'http://localhost:3000',
-    frontendUrl,
-  ].filter(Boolean);
+  const allowedOrigins = Array.from(
+    new Set([
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      ...frontendUrls,
+    ]),
+  );
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -61,10 +68,8 @@ async function bootstrap() {
       // Log blocked origins for debugging
       logger.warn(`🚫 CORS blocked origin: ${origin}`);
 
-      return callback(
-        new Error(`CORS blocked origin: ${origin}`),
-        false,
-      );
+      // Reject without throwing — throwing can strip CORS headers on preflight
+      return callback(null, false);
     },
 
     credentials: true,
@@ -82,6 +87,9 @@ async function bootstrap() {
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
     ],
   });
 

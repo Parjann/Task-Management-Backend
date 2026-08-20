@@ -87,6 +87,8 @@ model User {
   email         String   @unique
   passwordHash  String?
   avatarUrl     String?
+  title         String?
+  username      String?
   isGuest       Boolean  @default(false)
 
   theme         Theme    @default(SYSTEM)
@@ -119,6 +121,8 @@ model Project {
   key         String   @unique
   description String?
   color       String   @default("#6366F1")
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
 
   ownerId     String
 

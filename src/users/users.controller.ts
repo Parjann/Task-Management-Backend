@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
   Patch,
+  Post,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -18,6 +20,7 @@ import { memoryStorage } from 'multer';
 
 import { UsersService } from './users.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 const multerMemoryOptions = {
   storage: memoryStorage(),
@@ -38,6 +41,25 @@ export class UsersController {
   })
   async getProfile(@CurrentUser() user: { id: string }) {
     return this.usersService.getProfile(user.id);
+  }
+
+  @Patch('me')
+  @ApiOperation({
+    summary: 'Update current user profile',
+  })
+  async updateProfile(
+    @CurrentUser() user: { id: string },
+    @Body() dto: UpdateUserDto,
+  ) {
+    return this.usersService.updateProfile(user.id, dto);
+  }
+
+  @Post('me/leave-workspace')
+  @ApiOperation({
+    summary: 'Leave workspace (remove memberships and owned projects)',
+  })
+  async leaveWorkspace(@CurrentUser() user: { id: string }) {
+    return this.usersService.leaveWorkspace(user.id);
   }
 
   @Throttle({

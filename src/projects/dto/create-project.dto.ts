@@ -1,10 +1,13 @@
 import {
+  IsDateString,
+  IsEnum,
   IsHexColor,
   IsOptional,
   IsString,
   Length,
   Matches,
 } from 'class-validator';
+import { TaskPriority } from '@prisma/client';
 
 export class CreateProjectDto {
   @IsString()
@@ -23,4 +26,12 @@ export class CreateProjectDto {
   @IsOptional()
   @IsHexColor()
   color?: string;
+
+  @IsOptional()
+  @IsEnum(TaskPriority)
+  priority?: TaskPriority;
+
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string;
 }

@@ -73,4 +73,10 @@ export class ProjectsController {
   ) {
     return this.projectsService.addMember(id, user.id, dto);
   }
+
+  @Delete(':id/members/me')
+  @ApiOperation({ summary: 'Leave project' })
+  leaveProject(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.projectsService.leaveProject(id, user.id);
+  }
 }
