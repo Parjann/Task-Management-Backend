@@ -21,9 +21,17 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  // --------------------------------------------------
+  // Static uploads
+  // --------------------------------------------------
+
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
   });
+
+  // --------------------------------------------------
+  // CORS Configuration
+  // --------------------------------------------------
 
   const frontendUrl =
     configService.get<string>('FRONTEND_URL') || '';
@@ -34,9 +42,56 @@ async function bootstrap() {
   ].filter(Boolean);
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests without an Origin header.
+      // This is useful for:
+      // - Postman
+      // - server-to-server requests
+      // - health checks
+      // - some monitoring services
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Allow configured frontend origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Log blocked origins for debugging
+      logger.warn(`🚫 CORS blocked origin: ${origin}`);
+
+      return callback(
+        new Error(`CORS blocked origin: ${origin}`),
+        false,
+      );
+    },
+
     credentials: true,
+
+    methods: [
+      'GET',
+      'HEAD',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+      'OPTIONS',
+    ],
+
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+    ],
   });
+
+  logger.log(
+    `🌐 CORS allowed origins: ${allowedOrigins.join(', ')}`,
+  );
+
+  // --------------------------------------------------
+  // Global Validation
+  // --------------------------------------------------
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -46,10 +101,18 @@ async function bootstrap() {
     }),
   );
 
+  // --------------------------------------------------
+  // Global Exception Filters
+  // --------------------------------------------------
+
   app.useGlobalFilters(
     app.get(LoggingExceptionFilter),
     new ThrottlerExceptionFilter(),
   );
+
+  // --------------------------------------------------
+  // Global API Prefix
+  // --------------------------------------------------
 
   app.setGlobalPrefix('api', {
     exclude: [
@@ -60,6 +123,10 @@ async function bootstrap() {
     ],
   });
 
+  // --------------------------------------------------
+  // Swagger
+  // --------------------------------------------------
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Task Management API')
     .setDescription('Task Management Backend API')
@@ -67,17 +134,33 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = SwaggerModule.createDocument(
+    app,
+    swaggerConfig,
+  );
 
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = configService.get<number>('PORT') || 3001;
+  // --------------------------------------------------
+  // Start Server
+  // --------------------------------------------------
+
+  const port =
+    configService.get<number>('PORT') || 3001;
 
   await app.listen(port);
 
-  logger.log(`🚀 Server running on http://localhost:${port}`);
-  logger.log(`🌐 Frontend URL: ${frontendUrl}`);
-  logger.log(`📚 Swagger Docs: http://localhost:${port}/api/docs`);
+  logger.log(
+    `🚀 Server running on http://localhost:${port}`,
+  );
+
+  logger.log(
+    `🌐 CORS allowed origins: ${allowedOrigins.join(', ')}`,
+  );
+
+  logger.log(
+    `📚 Swagger Docs: http://localhost:${port}/api/docs`,
+  );
 }
 
 void bootstrap();
