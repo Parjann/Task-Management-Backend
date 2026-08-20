@@ -156,26 +156,7 @@ export class TasksService {
     // Dynamic filters
     const where: Prisma.TaskWhereInput = query.projectId
       ? { projectId: query.projectId }
-      : {
-          OR: [
-            { creatorId: userId },
-            { assigneeId: userId },
-            {
-              project: {
-                OR: [
-                  { ownerId: userId },
-                  {
-                    members: {
-                      some: {
-                        userId,
-                      },
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        };
+      : {};
 
     if (query.status) {
       where.status = query.status;

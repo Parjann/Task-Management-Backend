@@ -57,20 +57,8 @@ export class ProjectsService {
     return project;
   }
 
-  async findAll(userId: string) {
+  async findAll(_userId: string) {
     return this.prisma.project.findMany({
-      where: {
-        OR: [
-          { ownerId: userId },
-          {
-            members: {
-              some: {
-                userId,
-              },
-            },
-          },
-        ],
-      },
       include: {
         owner: true,
         members: {
